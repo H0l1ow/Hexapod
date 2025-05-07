@@ -23,7 +23,8 @@ const double J3L = 124.0; // tibia
 const double Y_Rest = 70.0; 
 const double Z_Rest = -80.0;
 
-const double J3_LegAngle = 15.4;
+const double J3_LegAngle = 10.4; // angle correction
+const double ServoAngleCorrection = 5.0; //just in case
 
 // Neutral pos
 double J1Act = 90.0; 
@@ -41,23 +42,95 @@ uint8_t commandStep = 0;
 // Sample test
 bool test = false;
 
-const double lines[][4] = {
-  {0.0, 0.0, 0.0, 200},   
-  {0.0, -20.0, 0.0, 200}, 
-  {0.0, 20.0, 0.0, 200},  
-  {0.0, 0.0, 20.0, 200},  
-  {0.0, 0.0, -20.0, 200}, 
-  {0.0, 0.0, 0.0, 200}    
-};
+// Commands
+const double lines[][4] = {{0.0, 0.0, 40.0, 1000},
+                            
+                            {-30.0, 40.0, 20.0, 200},
+                            {-30.0, 40.0, -20.0, 200},
+                            {60.0, 40.0, -20.0, 1600},
+                            {60.0, 60.0, 20.0, 200},  
 
+                            {-30.0, 30.0, 20.0, 200},
+                            {-30.0, 30.0, -20.0, 200},
+                            {60.0, 30.0, -20.0, 1600},
+                            {60.0, 50.0, 20.0, 200},
+
+                            {-30.0, 20.0, 20.0, 200},
+                            {-30.0, 20.0, -20.0, 200},
+                            {60.0, 20.0, -20.0, 1600},
+                            {60.0, 40.0, 20.0, 200},
+
+                            {-30.0, 10.0, 20.0, 200},
+                            {-30.0, 10.0, -20.0, 200},
+                            {60.0, 10.0, -20.0, 1600},
+                            {60.0, 30.0, 20.0, 200},
+
+                            {-30.0, 0.0, 20.0, 200},
+                            {-30.0, 0.0, -20.0, 200},
+                            {60.0, 0.0, -20.0, 1600},
+                            {60.0, 20.0, 20.0, 200},                                                      
+
+
+
+                            {-30.0, 40.0, 20.0, 200},
+                            {-30.0, 40.0, -20.0, 200},
+                            {-30.0, 0.0, -20.0, 800},
+                            {-30.0, 20.0, 20.0, 200},
+
+                            {-20.0, 40.0, 20.0, 200},
+                            {-20.0, 40.0, -20.0, 200},
+                            {-20.0, 0.0, -20.0, 800},
+                            {-20.0, 20.0, 20.0, 200},
+
+                            {-10.0, 40.0, 20.0, 200},
+                            {-10.0, 40.0, -20.0, 200},
+                            {-10.0, 0.0, -20.0, 800},
+                            {-10.0, 20.0, 20.0, 200},
+                            
+                            {0.0, 40.0, 20.0, 200},
+                            {0.0, 40.0, -20.0, 200},
+                            {0.0, 0.0, -20.0, 800},
+                            {0.0, 20.0, 20.0, 200},
+
+                            {10.0, 40.0, 20.0, 200},
+                            {10.0, 40.0, -20.0, 200},
+                            {10.0, 0.0, -20.0, 800},
+                            {10.0, 20.0, 20.0, 200},
+
+                            {20.0, 40.0, 0.0, 200},
+                            {20.0, 40.0, -20.0, 200},
+                            {20.0, 0.0, -20.0, 800},
+                            {20.0, 20.0, 0.0, 200},
+
+                            {30.0, 40.0, 0.0, 200},
+                            {30.0, 40.0, -20.0, 200},
+                            {30.0, 0.0, -20.0, 800},
+                            {30.0, 20.0, 0.0, 200},
+
+                            {40.0, 40.0, 0.0, 200},
+                            {40.0, 40.0, -20.0, 200},
+                            {40.0, 0.0, -20.0, 800},
+                            {40.0, 20.0, 0.0, 200},
+
+                            {50.0, 40.0, 0.0, 200},
+                            {50.0, 40.0, -20.0, 200},
+                            {50.0, 0.0, -20.0, 800},
+                            {50.0, 20.0, 0.0, 200},
+
+                            {60.0, 40.0, 0.0, 200},
+                            {60.0, 40.0, -20.0, 200},
+                            {60.0, 0.0, -20.0, 800},
+                            {60.0, 20.0, 0.0, 200},
+
+                            {0.0, 0.0, 40.0, 200}};
 
 void setup() {
   Serial.begin(115200);
   pwm.begin();
-  pwm.setPWMFreq(60); // 60 Hz servo freq
+  pwm.setPWMFreq(50); // 60 Hz servo freq, for model 50Hz
 
-  //UpdatePosition(90, 90, 90);
-  //delay(5000);
+  UpdatePosition(0, 45, 45);
+  delay(5000);
 }
 
 void loop() {
@@ -75,13 +148,13 @@ void loop() {
     static bool test_started = false;
 
     if (!test_started || J2Tar.isFinished()) {
-      double yMove = forward ? 40.0 : -40.0;
+      double T_Move = forward ? 50.0 : -50.0;
       forward = !forward;         
       uint16_t duration = 1000;  
 
       J1Tar.go(0.0, duration);   
-      J2Tar.go(yMove, duration); 
-      J3Tar.go(0.0, duration);   
+      J2Tar.go(T_Move, duration); 
+      J3Tar.go(-20.0, duration);   
 
       test_started = true;
     }
@@ -99,7 +172,7 @@ void loop() {
         double xMove = lines[commandStep][0];
         double yMove = lines[commandStep][1];
         double zMove = lines[commandStep][2];
-        uint16_t duration = lines[commandStep][3] * 2;
+        uint16_t duration = lines[commandStep][3] * 1;
 
         J1Tar.go(xMove, duration);
         J2Tar.go(yMove, duration);
@@ -132,7 +205,14 @@ void UpdatePosition(double J1, double J2, double J3) {
   // MG996R settings (individual)
   setServoAngle(J1_CHANNEL, 90 - J1);
   setServoAngle(J2_CHANNEL, 90 - J2);
-  setServoAngle(J3_CHANNEL, J3);
+  setServoAngle(J3_CHANNEL, J3 - J3_LegAngle);
+
+/*
+  Serial.print("J1: "); Serial.print(J1);
+  Serial.print("  J2: "); Serial.print(J2);
+  Serial.print("  J3: "); Serial.println(J3);
+*/
+
 }
 
 void setServoAngle(uint8_t channel, double angle) {
